@@ -1,0 +1,21 @@
+# ROS2
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+
+# Models (IMPORTANT)
+*.engine
+*.onnx
+*.pt
+
+# Data
+frames/
+data/
+videos/
+
+# Misc
+*.log

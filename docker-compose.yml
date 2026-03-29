@@ -1,0 +1,51 @@
+services:
+  camera:
+    build: ./camera
+    runtime: nvidia
+    devices:
+      - /dev/video0:/dev/video0
+    ipc: host
+    volumes:
+      - /dev/shm:/dev/shm
+
+  vision_c:
+    build: ./vision_c
+    runtime: nvidia
+    ipc: host
+    environment:
+      - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:/usr/local/cuda/lib64
+    volumes:
+      - /dev/shm:/dev/shm
+      - .vision_c/models:/vision_c/models
+    # Core system libs
+      - /usr/lib/aarch64-linux-gnu:/usr/lib/aarch64-linux-gnu:ro
+      - /lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:ro
+
+    # CUDA (THIS FIXES libcudla.so.1)
+      - /usr/local/cuda:/usr/local/cuda:ro
+
+    # Python TensorRT bindings
+      - /usr/lib/python3.10/dist-packages:/usr/lib/python3.10/dist-packages:ro
+
+  vision_d:
+    build: ./vision_d
+    runtime: nvidia
+    ipc: host
+    environment:
+      - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:/usr/local/cuda/lib64
+    volumes:
+      - /dev/shm:/dev/shm
+      - /usr/lib/aarch64-linux-gnu:/usr/lib/aarch64-linux-gnu:ro
+      - /lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:ro
+      - /usr/local/cuda:/usr/local/cuda:ro
+      - /usr/lib/python3.10/dist-packages:/usr/lib/python3.10/dist-packages:ro
+
+  viewer:
+    build: ./viewer
+    runtime: nvidia
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /dev/shm:/dev/shm
+      - /tmp/.X11-unix:/tmp/.X11-unix

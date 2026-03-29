@@ -1,0 +1,25 @@
+# Dockerfile.base
+FROM nvcr.io/nvidia/l4t-ml:r36.2.1-py3  # Jetson Orin ML base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3-pip python3-dev git build-essential cmake \
+    libglib2.0-0 libsm6 libxext6 libxrender-dev wget \
+    libjpeg-dev zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
+# Install PyTorch (preinstalled on l4t-ml, but reinstall if needed)
+RUN pip3 install --pre torch torchvision torchaudio --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v2
+
+# Install Ultralytics YOLO offline-ready (skip downloading weights)
+RUN pip3 install ultralytics==8.0.134
+
+# Install OpenCV headless
+RUN pip3 install opencv-python-headless
+
+WORKDIR /app

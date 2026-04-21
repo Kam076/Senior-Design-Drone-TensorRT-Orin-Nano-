@@ -5,18 +5,20 @@ import os
 
 # Shared memory paths
 TOGGLE_PATH = "/dev/shm/active.txt"
+OUTPUT_B = "/dev/shm/B_output.npy"
 OUTPUT_C = "/dev/shm/C_output.npy"
 OUTPUT_D = "/dev/shm/D_output.npy"
 OUTPUT_RAW = "/dev/shm/frame_raw.npy"  # unprocessed camera feed
 
 WIDTH = 1280
 HEIGHT = 720
-CHANNELS = 3
+CHANNELS = 4
 
 KEY_MAP = {
     ord('0'): 'RAW',   # Raw camera feed
-    ord('1'): 'C',     # Vision C (people)
-    ord('2'): 'D'      # Vision D (objects)
+    ord('2'): 'C',     # Vision C (fire)
+    ord('1'): 'B',      # Vision B (drone view)
+    ord('3'): 'D'      # Vision D (objects)
 }
 
 # Ensure toggle file exists
@@ -27,7 +29,8 @@ if not os.path.exists(TOGGLE_PATH):
 print("\nControls:")
 print("  0 → Raw Camera")
 print("  1 → People Detection (C)")
-print("  2 → Object Detection (D)")
+print("  2 → Object Detection (B)")
+print("  3 → Object Detection (D)")
 print("  q → Quit\n")
 
 def read_frame(path):
@@ -59,6 +62,8 @@ while True:
     # --- Read the correct frame ---
     if active == "C":
         frame = read_frame(OUTPUT_C)
+    elif active == "B":
+        frame = read_frame(OUTPUT_B)
     elif active == "D":
         frame = read_frame(OUTPUT_D)
     else:  # RAW camera feed
@@ -76,18 +81,6 @@ while True:
             2
         )
         cv2.imshow("Vision Viewer", frame)
-    else:
-        blank = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-        cv2.putText(
-            blank,
-            f"{active} frame not ready",
-            (WIDTH // 4, HEIGHT // 2),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.2,
-            (0, 0, 255),
-            3
-        )
-        cv2.imshow("Vision Viewer", blank)
 
     time.sleep(0.01)
 

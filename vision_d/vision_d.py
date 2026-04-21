@@ -7,47 +7,98 @@ os.environ["YOLO_AUTOINSTALL"] = "false"
 from ultralytics import YOLO
 
 # Shared memory paths
-FRAME_PATH = "/dev/shm/frame.npy"        # from camera
-OUTPUT_PATH = "/dev/shm/D_output.npy"    # output for viewer
+FRAME_PATH = "/dev/shm/frame.npy"
+OUTPUT_PATH = "/dev/shm/D_output.npy"
 TOGGLE_PATH = "/dev/shm/active.txt"
 
 MY_ID = "D"
 
-WIDTH = 1280
-HEIGHT = 720
-CHANNELS = 3
+model = None  # <-- start unloaded
 
-# Load TensorRT YOLO engine
-model = YOLO("./models/yolov8s.engine", task="detect")
 print("Vision D running (TensorRT)")
 
-while True:
-    # Check toggle
+# -------------------------
+# Helper
+# -------------------------
+def is_active():
     try:
         with open(TOGGLE_PATH) as f:
-            active = f.read().strip()
+            return f.read().strip() == MY_ID
     except:
-        active = "OFF"
+        return False
 
-    if active != MY_ID:
-        time.sleep(0.01)
+# -------------------------
+# Main loop
+# -------------------------
+while True:
+
+    # -------------------------
+    # INACTIVE STATE
+    # -------------------------
+    if not is_active():
+
+        #unload model (frees GPU)
+        if model is not None:
+            print("[INFO] Unloading model D...")
+            del model
+            model = None
+
+            try:
+                import torch
+                torch.cuda.empty_cache()
+            except:
+                pass
+
+        time.sleep(0.1)
         continue
 
-    # Load frame from camera
+    # -------------------------
+    # ACTIVE STATE
+    # -------------------------
+    # lazy load
+    if model is None:
+        print("[INFO] Loading model ...")
+        model = YOLO("./vision_d/models/yolov8s.engine", task="detect")
+        names = model.names
+
+    # Load frame
     try:
         frame = np.load(FRAME_PATH)
     except:
         time.sleep(0.002)
         continue
 
-    # Run inference (all classes)
-    results = model(frame, conf=0.4, verbose=False)
+    # Inference
+    try:
+        results = model(frame, conf=0.4, verbose=False)
+    except Exception as e:
+        print(f"[ERROR] Inference D: {e}")
+        continue
 
-    # Draw bounding boxes
+    # Draw boxes
     for r in results:
-        for box in r.boxes:
-            x1, y1, x2, y2 = map(int, box.xyxy[0])
+        if r.boxes is None:
+            continue
+
+        boxes = r.boxes.xyxy.cpu().numpy()
+        classes = r.boxes.cls.cpu().numpy().astype(int)
+        confs = r.boxes.conf.cpu().numpy()
+
+        for (x1, y1, x2, y2), cls, conf in zip(boxes, classes, confs):
+            x1, y1, x2, y2 = map(int, (x1, y1, x2, y2))
+
+            label = f"{names[cls]} {conf:.2f}"
+
             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-    # Save output to shared memory
-    np.save(OUTPUT_PATH, frame)
+            (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            cv2.rectangle(frame, (x1, y1 - h - 4), (x1 + w, y1), (255, 0, 0), -1)
+
+            cv2.putText(frame, label, (x1, y1 - 2),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+    # Save output
+    try:
+        np.save(OUTPUT_PATH, frame)
+    except Exception as e:
+        print(f"[WARN] Save failed: {e}")

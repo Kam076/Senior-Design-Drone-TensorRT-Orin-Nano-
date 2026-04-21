@@ -8,14 +8,14 @@ from ultralytics import YOLO
 
 # Shared memory paths
 FRAME_PATH = "/dev/shm/frame.npy"
-OUTPUT_PATH = "/dev/shm/C_output.npy"
+OUTPUT_PATH = "/dev/shm/B_output.npy"
 TOGGLE_PATH = "/dev/shm/active.txt"
 
-MY_ID = "C"
+MY_ID = "B"
 
 model = None  # <-- start unloaded
 
-print("Vision C running (TensorRT)")
+print("Vision B running (TensorRT)")
 
 # -------------------------
 # Helper
@@ -58,7 +58,7 @@ while True:
     # lazy load
     if model is None:
         print("[INFO] Loading model ...")
-        model = YOLO("./vision_c/models/best.engine", task="detect")
+        model = YOLO("./vision_b/models/drone1n.engine", task="detect")
         names = model.names
 
     # Load frame
@@ -70,7 +70,7 @@ while True:
 
     # Inference
     try:
-        results = model(frame, conf=0.4, verbose=False)
+        results = model(frame, classes=[0], conf=0.4, verbose=False)
     except Exception as e:
         print(f"[ERROR] Inference B: {e}")
         continue
@@ -89,10 +89,10 @@ while True:
 
             label = f"{names[cls]} {conf:.2f}"
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 255, 0), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 50, 50), 2)
 
             (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-            cv2.rectangle(frame, (x1, y1 - h - 4), (x1 + w, y1), (255, 255, 0), -1)
+            cv2.rectangle(frame, (x1, y1 - h - 4), (x1 + w, y1), (255, 50, 50), -1)
 
             cv2.putText(frame, label, (x1, y1 - 2),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)

@@ -31,4 +31,4 @@ while True:
     except Exception as e:
         print(f"[ERROR] Failed to save frame: {e}")
 
-    time.sleep(0.01)
+    time.sleep(0.002)

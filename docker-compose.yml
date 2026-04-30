@@ -7,6 +7,14 @@ services:
     ipc: host
     volumes:
       - /dev/shm:/dev/shm
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/frame.npy"]
+      interval: 1s
+      timeout: 1s
+      retries: 10
+    restart: unless-stopped
+
+
 
   vision_b:
     build: ./vision_b
@@ -15,6 +23,14 @@ services:
     volumes:
       - /dev/shm:/dev/shm
       - ./vision_b/models:/vision_b/models
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/vision_b_ready"]
+      interval: 1s
+      timeout: 1s
+      retries: 10
+    restart: unless-stopped
+
+
 
 
   vision_c:
@@ -24,7 +40,12 @@ services:
     volumes:
       - /dev/shm:/dev/shm
       - ./vision_c/models:/vision_c/models
-   
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/vision_c_ready"]
+      interval: 1s
+      timeout: 1s
+      retries: 10
+    restart: unless-stopped
 
 
 
@@ -35,7 +56,15 @@ services:
 
     volumes:
       - /dev/shm:/dev/shm
-      - ./vision_c/models:/vision_c/models
+      - ./vision_d/models:/vision_d/models
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/vision_d_ready"]
+      interval: 1s
+      timeout: 1s
+      retries: 10
+    restart: unless-stopped
+
+
 
 
   viewer:
@@ -47,3 +76,14 @@ services:
     volumes:
       - /dev/shm:/dev/shm
       - /tmp/.X11-unix:/tmp/.X11-unix
+    restart: unless-stopped
+    depends_on:
+     camera:
+       condition: service_healthy
+     vision_b:
+       condition: service_healthy
+     vision_c:
+       condition: service_healthy
+     vision_d:
+       condition: service_healthy
+

@@ -10,6 +10,7 @@ from ultralytics import YOLO
 FRAME_PATH = "/dev/shm/frame.npy"
 OUTPUT_PATH = "/dev/shm/D_output.npy"
 TOGGLE_PATH = "/dev/shm/active.txt"
+open("/dev/shm/vision_d_ready", "w").close()
 
 MY_ID = "D"
 
@@ -58,7 +59,7 @@ while True:
     # lazy load
     if model is None:
         print("[INFO] Loading model ...")
-        model = YOLO("./vision_d/models/yolov8s.engine", task="detect")
+        model = YOLO("./vision_d/models/vehicle.engine", task="detect")
         names = model.names
 
     # Load frame
@@ -70,7 +71,7 @@ while True:
 
     # Inference
     try:
-        results = model(frame, conf=0.4, verbose=False)
+        results = model(frame, conf=0.4,classes=[2], verbose=False)
     except Exception as e:
         print(f"[ERROR] Inference D: {e}")
         continue

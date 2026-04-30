@@ -11,6 +11,8 @@ FRAME_PATH = "/dev/shm/frame.npy"
 OUTPUT_PATH = "/dev/shm/C_output.npy"
 TOGGLE_PATH = "/dev/shm/active.txt"
 
+open("/dev/shm/vision_c_ready", "w").close()
+
 MY_ID = "C"
 
 model = None  # <-- start unloaded
